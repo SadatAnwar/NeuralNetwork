@@ -1,7 +1,8 @@
 import copy
+
+import climate
 import numpy as np
 import theanets
-import climate
 import time
 
 import utils
@@ -64,7 +65,7 @@ for lag in lags:
             smape = utils.calculateSMAPE(orig, result)
             # Start the plotting
             pl.style.use('bmh')
-            fig_x_scale = range(0, futures + 1, 6)
+            fig_x_scale = range(0, len(result[0]) + 1, 6)
             title = 'algo:%s, lags:%s, hidden neurons:%s, \n testSample:%s TrainTime:%.2f sec' % (
                 algo, lag, hiddenNeuron, len(result), trainTime)
             x_lable = 'forecast as t+x'
@@ -101,6 +102,14 @@ for lag in lags:
             pl.title(title)
             pl.legend(['MAPE', 'SMAPE', 'RMSE'])
             pl.savefig('../results/mac/profile%s.pdf' % j)
+            pl.close()
+            pl.figure(figsize=(15, 8), dpi=100)
+            pl.xticks(fig_x_scale)
+            pl.xlabel(x_lable)
+            pl.plot(utils.calculateCorrelation(orig, result))
+            pl.title(title)
+            pl.savefig('../results/mac/corr%s.pdf' % j)
+            pl.legend(['Correlation coefficient'])
             pl.close()
             j += 1
             utils.benchmark(str(lag), inLayer.size, hiddenNeuron, outLayer.size, error[0]['err'], error[1]['err'],

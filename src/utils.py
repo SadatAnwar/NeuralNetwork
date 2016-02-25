@@ -1,5 +1,6 @@
 import csv
 import os
+
 import numpy as np
 
 
@@ -206,10 +207,18 @@ def calculateCorrelation(actual, forcasted):
     assert (len(actual[0]) == len(forcasted[0]))
     correlation = []
     for i in range(0, len(actual[0])):
-        meanA = np.mean(actual[:, i])
-        meanF = np.mean(forcasted[:, i])
-        sdA = np.std(actual[:, i])
-        sdF = np.std(forcasted[:, i])
+        a_ = actual[:, i]
+        meanA = np.mean(a_)
+        f_ = forcasted[:, i]
+        meanF = np.mean(f_)
+        sdA = np.std(a_)
+        sdF = np.std(f_)
+        z = 0
+        for x in range(0, len(a_)):
+            z += (a_[x] - meanA) * (f_[x] - meanF)
+        z = z / (sdA * sdF)
+        correlation.append(z / (len(actual)))
+    return correlation
 
 
 def calculateMaxMinPerError(actual, forcasted):
@@ -222,7 +231,7 @@ def calculateMaxMinPerError(actual, forcasted):
     return np.amax(pe, axis=0), np.amin(pe, axis=0)
 
 
-def calculateSMAPE(actual, forrcasted):
+def calculateSMAPE(actual, forcasted):
     """
     There is a third version of SMAPE, which allows to measure the direction of the bias in the data by generating a positive and a negative error on line item level. Furthermore it is better protected against outliers and the bias effect mentioned in the previous paragraph than the two other formulas. The formula is:
 

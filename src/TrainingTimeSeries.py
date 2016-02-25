@@ -49,7 +49,7 @@ class TrainingTimeSeries:
                 self._data = np.asarray(np.column_stack(newData))
             else:
                 if len(self._data[0]) != len(newData):
-                    pass
+                    continue
                 self._data = np.append(self._data, np.column_stack(newData), axis=0)
         endTime = time.time() - start
         climate.logging.info('Training data completed in %.2f sec' % endTime)
@@ -130,7 +130,7 @@ class TrainingTimeSeries:
                     return np.nan
                 # laggedTimes = [currentTime - datetime.timedelta(hours=x) for x in range(period[0], (period[1] + 1))]
                 vals = timeSeries.getValuesBetween(currentTime - datetime.timedelta(hours=period[0]),
-                                                   currentTime - datetime.timedelta(hours=(period[1] + 1)))
+                                                   currentTime - datetime.timedelta(hours=(period[1])))
                 if np.isnan(vals).any():
                     return np.nan
                 targets = np.append(targets, vals[:,-1])
