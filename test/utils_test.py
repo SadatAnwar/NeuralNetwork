@@ -5,17 +5,16 @@ import numpy as np
 import utils as utils
 
 
-
 class utilsTest(unittest.TestCase):
     def test_antiLog_int(self):
-        self.assertEqual(utils.antiLog(1 ** 0.01), 10)
+        utils.getTimeSeriesFromServer()
 
     def test_antiLog_ndarray(self):
-        a = np.array([[1 ** 0.01,1 ** 0.01],[1 ** 0.001,1 ** 0.001]])
+        a = np.array([[1 ** 0.01, 1 ** 0.01], [1 ** 0.001, 1 ** 0.001]])
         expectedResult = [
-                    [utils.antiLog(1 ** 0.01), utils.antiLog(1 ** 0.01)],
-                    [utils.antiLog(1 ** 0.001), utils.antiLog(1 ** 0.001)]
-                ]
+            [utils.antiLog(1 ** 0.01), utils.antiLog(1 ** 0.01)],
+            [utils.antiLog(1 ** 0.001), utils.antiLog(1 ** 0.001)]
+        ]
         self.assertEqual(utils.antiLog(a), expectedResult)
 
     def test_antiLog_list(self):

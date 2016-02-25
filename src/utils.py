@@ -1,3 +1,4 @@
+# coding=utf-8
 import csv
 import os
 
@@ -375,3 +376,26 @@ def plotFigures(actual, forcasted, title, seq, locationToSaveImages='../results/
     imageName = locationToSaveImages + ('plot_line_%s.pdf' % seq)
     plt.savefig(imageName, bbox_inches='tight')
     plt.close()
+
+
+def getTimeSeriesFromServer():
+    import urllib
+    urlToVisit = "http://seh-prognose.iao.fraunhofer.de:8080/prognosen/rest/getCSV.do?username=max&passwort=mustermann&start=%s&end=%s&timeseriesMetadataName=%s"
+    startDate = '2014-01-01T00:00:00%2B01:00'
+    endDate = '2014-12-31T23:59:59%2B01:00'
+    listOfTS = ['TERMINALS_HEAT_INPUT', 'TERMINALS_COOLNESS_INPUT', 'BÜRONORD_VLG_OPS_POWER_INPUT',
+                'BÜRONORD_VLG_OPS_HEAT_INPUT', 'BÜRONORD_VLG_OPS_COOLNESS_INPUT', 'T1_ANL_REST_POWER_INPUT',
+                'T1_ANL_REST_HEAT_INPUT', 'T1_ANL_REST_COOLNESS_INPUT', 'VLG_ANL_REST_POWER_INPUT',
+                'VLG_ANL_REST_HEAT_INPUT', 'VLG_ANL_REST_COOLNESS_INPUT', 'RLT_L2_HEAT_INPUT', 'RLT_L2_COOLNESS_INPUT',
+                'RLT_L2_POWER_INPUT', 'AUSSENLUFTAUFB_POWER_INPUT', 'AUSSENLUFTAUFB_HEAT_INPUT',
+                'FUSSBODENK_COOLNESS_INPUT', 'ALLE_GEBAUEDE_HEAT_INPUT', 'AKM_TERMINALS_HEAT_INPUT',
+                'AKM_VL_GEBAEUDE_HEAT_INPUT', 'AKM_TERMINALS_COOLNESS_OUTPUT', 'EIS_TERMINALS_COOLNESS_INPUT',
+                'KKM_2_TERMINALS_POWER_INPUT', 'KKM_2_TERMINALS_COOLNESS_OUTPUT', 'KKM_1_TERMINALS_POWER_INPUT',
+                'KKM_1_TERMINALS_COOLNESS_OUTPUT', 'AKM_VL_GEBAEUDE_COOLNESS_OUTPUT', 'KKM_VL_GEBAUEDE_COOLNESS_OUTPUT',
+                'POWER_BHKW_OUTPUT', 'HEAT_BHKW_OUTPUT', 'HEAT_HK_3_OUTPUT', 'HEAT_HK_2_OUTPUT', 'HEAT_HK_1_OUTPUT',
+                'POWER_TERMINAL1_INPUT', 'COOLNESS_VERKERHSLEITGEBAEUDE_INPUT', 'HEAT_GESAMT_INPUT',
+                'COOLNESS_TERMINAL1_INPUT', 'HEAT_TERMINAL1_INPUT', 'HEAT_VERKEHRSLEITGEBAEUDE_INPUT',
+                'POWER_VERKEHRSLEITGEBAEUDE_INPUT', 'COOLNESS_GESAMT_INPUT', 'POWER_GESAMT_INPUT']
+    for ts in listOfTS:
+        ts_ = urlToVisit % (startDate, endDate, ts)
+        urllib.urlretrieve(ts_, ts + '.csv')
