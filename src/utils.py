@@ -347,3 +347,31 @@ def benchmark(lags, inputDimensions, hidden, outputs, trainError, validationErro
                 (lags, inputDimensions, hidden, outputs, numParam,
                  trainError, validationError,
                  flatFunction(rmse), flatFunction(mape), flatFunction(smape), trainTime, iterations))
+
+
+def plotFigures(actual, forcasted, title, seq, locationToSaveImages='../results/mac/'):
+    import matplotlib.pyplot as plt
+    plt.style.use('ggplot')
+    f, axarr = plt.subplots(2, 2)
+    f.set_dpi(100)
+    f.set_size_inches(15, 10)
+    f.suptitle(title, fontsize=20)
+    rmse = calculateRMSE(actual, forcasted)
+    mape = calculateMAPE(actual, forcasted)
+    smape = calculateSMAPE(actual, forcasted)
+    corr = calculateCorrelation(actual, forcasted)
+    axarr[0, 0].plot(rmse, color=list(plt.rcParams['axes.prop_cycle'])[0]['color'])
+    axarr[0, 0].set_title('RMSE Actual VS Forecast')
+    axarr[0, 0].set_xticks(range(0, len(rmse), len(rmse) / 10))
+    axarr[0, 1].plot(corr, color=list(plt.rcParams['axes.prop_cycle'])[1]['color'])
+    axarr[0, 1].set_title('Correlation Actual VS Forecast')
+    axarr[0, 1].set_xticks(range(0, len(rmse), len(rmse) / 10))
+    axarr[1, 0].plot(smape, color=list(plt.rcParams['axes.prop_cycle'])[2]['color'])
+    axarr[1, 0].set_title('SMAPE Actual VS Forecast')
+    axarr[1, 0].set_xticks(range(0, len(rmse), len(rmse) / 10))
+    axarr[1, 1].plot(mape, color=list(plt.rcParams['axes.prop_cycle'])[4]['color'])
+    axarr[1, 1].set_title('MAPE Actual VS Forecast')
+    axarr[1, 1].set_xticks(range(0, len(rmse), len(rmse) / 10))
+    imageName = locationToSaveImages + ('plot_line_%s.pdf' % seq)
+    plt.savefig(imageName, bbox_inches='tight')
+    plt.close()
