@@ -28,6 +28,19 @@ def linearEvaluationFunction(x):
     return s / sum(a)
 
 
+def plotNonLinearEvalFunc(x):
+    a = np.ones(x)
+    # the first 48 hrs are significant beyond that we have exponential decay
+    if x > 48:
+        for i in range(48, x):
+            a[i] = np.exp(1) ** (-0.05 * (i - 48))
+    import matplotlib.pyplot as pl
+    pl.figure(0, (10, 8), dpi=100)
+    pl.title("Weighted average function")
+    pl.plot(a)
+    pl.show()
+
+
 def nonlinearEvaluationFunction(x):
     """
     A linear evaluation function that converts 2D data 1 point
@@ -38,7 +51,7 @@ def nonlinearEvaluationFunction(x):
     # the first 48 hrs are significant boyond that we have exponential decay
     if len(x) > 48:
         for i in range(48, len(x)):
-            a[i] = np.exp(1) ** (-0.01 * (i - 48))
+            a[i] = np.exp(1) ** (-0.05 * (i - 48))
     s = 0
     for i in range(0, len(x)):
         s += x[i] * a[i]
@@ -316,7 +329,7 @@ def benchmark(lags, inputDimensions, hidden, outputs, trainError, validationErro
               trainTime,
               iterations,
               flatFunction=nonlinearEvaluationFunction,
-              fileName='../performance/neuralNetBenchmark1.csv'):
+              fileName='../performance/neuralNetBenchmark_sig.csv'):
     """
     Log the benchmark to a file (so that it can be plotted for comparisons)
     :param algo:
@@ -330,8 +343,8 @@ def benchmark(lags, inputDimensions, hidden, outputs, trainError, validationErro
     :return:
     """
     # If the output is more than one, then we will have multiple mse, and mape's
-    header = 'input lags; input Dimensions; hidden; outputs; net parameters; trainError; validationError;' + \
-             ' RMSE; MAPE; SMAPE; train time; iterations \n'
+    header = 'input lags, input Dimensions, hidden, outputs, net parameters, trainError, validationError,' + \
+             ' RMSE, MAPE, SMAPE, train time, iterations \n'
     if not os.path.isfile(fileName):
         with open(fileName, 'w') as o:
             # Write the header
@@ -344,13 +357,13 @@ def benchmark(lags, inputDimensions, hidden, outputs, trainError, validationErro
                 o.write(header)
 
     with open(fileName, 'a') as w:
-        w.write('%s;%s;%s;%s;%s;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%s\n' %
+        w.write('%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%s\n' %
                 (lags, inputDimensions, hidden, outputs, numParam,
                  trainError, validationError,
                  flatFunction(rmse), flatFunction(mape), flatFunction(smape), trainTime, iterations))
 
 
-def plotFigures(actual, forcasted, title, seq, locationToSaveImages='../results/mac/'):
+def plotFigures(actual, forcasted, title, seq, locationToSaveImages='../results/backprop/'):
     import matplotlib.pyplot as plt
     plt.style.use('ggplot')
     f, axarr = plt.subplots(2, 2)
@@ -373,7 +386,7 @@ def plotFigures(actual, forcasted, title, seq, locationToSaveImages='../results/
     axarr[1, 1].plot(mape, color=list(plt.rcParams['axes.prop_cycle'])[4]['color'])
     axarr[1, 1].set_title('MAPE Actual VS Forecast')
     axarr[1, 1].set_xticks(range(0, len(rmse), len(rmse) / 10))
-    imageName = locationToSaveImages + ('plot_line_%s.pdf' % seq)
+    imageName = locationToSaveImages + ('plot_sig_line_%s.pdf' % seq)
     plt.savefig(imageName, bbox_inches='tight')
     plt.close()
 

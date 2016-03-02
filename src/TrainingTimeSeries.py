@@ -1,9 +1,8 @@
-import climate
 import datetime
-import numpy as np
 import time
 
-from TimePoint import TimePoint
+import climate
+import numpy as np
 
 
 class TrainingTimeSeries:
@@ -36,14 +35,15 @@ class TrainingTimeSeries:
         start = time.time()
         for tp in self._timeSeries:
             # Convert the dateTime to features
-            features = tp.getTimePointFeatures()
+            features = self._timeSeries.getDatetimeFeatures(tp.getDateTime())
             # Get the lagged targets
             laggedTargets = self._getLagTargets(self._timeSeries, tp, self._lags)
             if np.isnan(laggedTargets).any():
                 continue
-            futureVals = self._getFutures(tp.getDateTime(), futures)
-            if np.isnan(futureVals).any():
+            futureFeatures, futureTargets = self._getFutures(tp.getDateTime(), futures)
+            if np.isnan(futureFeatures).any() or np.isnan(futureTargets).any():
                 continue
+            futureVals = np.concatenate((futureFeatures, futureTargets))
             newData = np.concatenate((features, laggedTargets, futureVals))
             if self._data is None:
                 self._data = np.asarray(np.column_stack(newData))
@@ -63,8 +63,6 @@ class TrainingTimeSeries:
         climate.logging.info('Validation data size %s' % len(self._validationData))
         self._testData = self._data[dataTrain + dataValidation:, :]
         climate.logging.info('Test data size %s' % len(self._testData))
-        # Len of target, is len of futures + 1 (futures =0, target =1)
-        self.targetLength = self._futures + 1
         self.trainLength = len(self._data[0]) - self.targetLength
 
     def getTrainingTrain(self):
@@ -126,14 +124,14 @@ class TrainingTimeSeries:
             if isinstance(period, list):
                 # Check the limit of this range, if the last (max lag) is not nan, we can get valid data from the lags
                 # if not, we cant use it, so we return nan.
-                if timeSeries[currentTime - datetime.timedelta(hours=period[1]+1)] is np.nan:
+                if timeSeries[currentTime - datetime.timedelta(hours=period[1] + 1)] is np.nan:
                     return np.nan
                 # laggedTimes = [currentTime - datetime.timedelta(hours=x) for x in range(period[0], (period[1] + 1))]
                 vals = timeSeries.getValuesBetween(currentTime - datetime.timedelta(hours=period[0]),
                                                    currentTime - datetime.timedelta(hours=(period[1])))
                 if np.isnan(vals).any():
                     return np.nan
-                targets = np.append(targets, vals[:,-1])
+                targets = np.append(targets, vals[:, -1])
             else:
                 laggedTarget = timeSeries[currentTime - datetime.timedelta(hours=period)]
                 if laggedTarget is not np.nan:
@@ -153,14 +151,27 @@ class TrainingTimeSeries:
         :return:
         """
         index = self._timeSeries.getIndex(currentTimePoint)
-        vals = self._timeSeries.getValuesBetween(index, index+numberOfFutures)
-        if np.isnan(vals).any():
-            futuresTargets = np.asarray([np.nan * numberOfFutures])
-            futuresFeatures = np.asarray([np.nan * numberOfFutures])
-        else:
-            futuresTargets = vals[:, -1]
-            futuresFeatures = vals[:min(48,len(vals)), :-1]
-        return np.concatenate((futuresFeatures.flatten(), futuresTargets.flatten()))
+        if isinstance(numberOfFutures, int):
+            vals = self._timeSeries.getValuesBetween(index, index + numberOfFutures)
+            if np.isnan(vals).any():
+                futuresTargets = np.asarray([np.nan * numberOfFutures])
+                futuresFeatures = np.asarray([np.nan * numberOfFutures])
+            else:
+                futuresTargets = vals[:, -1]
+                futuresFeatures = vals[:min(48, len(vals)), :-1]
+                self.targetLength = len(futuresTargets.flatten())
+            return futuresFeatures.flatten(), futuresTargets.flatten()
+        if isinstance(numberOfFutures, tuple) or isinstance(numberOfFutures, list):
+            vals = self._timeSeries.getValuesBetween(index + numberOfFutures[0],
+                                                     index + numberOfFutures[0] + numberOfFutures[1])
+            if np.isnan(vals).any():
+                futuresTargets = np.asarray([np.nan * (numberOfFutures[0] - numberOfFutures[1])])
+                futuresFeatures = np.asarray([np.nan * (numberOfFutures[0] - numberOfFutures[1])])
+            else:
+                futuresTargets = vals[:, -1]
+                futuresFeatures = vals[:min(48, len(vals)), :-1]
+                self.targetLength = len(futuresTargets.flatten())
+            return futuresFeatures.flatten(), futuresTargets.flatten()
 
     def _normalize(self, timeSeries):
         climate.logging.info('Normalizing TimeSeries...')
@@ -177,7 +188,7 @@ class TrainingTimeSeries:
         self._isMeanCalculated = True
 
     def _getDeviationTimeSeries(self, timeSeries):
-        self.deviation = np.std(timeSeries.getValuesBetween(0, len(timeSeries)-1))
+        self.deviation = np.std(timeSeries.getValuesBetween(0, len(timeSeries) - 1))
         self.deviation[0] = 1
         self._isDeviationCalculated = True
 

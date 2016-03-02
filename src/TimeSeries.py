@@ -1,7 +1,8 @@
+import datetime
 from collections import Sequence
 
 import numpy as np
-import datetime
+
 from Logger import Logger
 from TimePoint import TimePoint
 
@@ -68,7 +69,7 @@ class TimeSeries(Sequence):
             else:
                 return np.nan
         # Get the value for the TP
-        val = tp[1]
+        val = tp[-1]
         # apply the mask function to the value
         for mask in self._maskFunctions:
             val = mask(val)
@@ -80,14 +81,14 @@ class TimeSeries(Sequence):
 
     def __iter__(self):
         for tp in self._listTimePoints:
-            val = tp[1]
+            val = tp[-1]
             for mask in self._maskFunctions:
                 val = mask(val)
             yield TimePoint(tp[0], val)
 
     def values(self):
         for tp in self._listTimePoints:
-            val = tp[1]
+            val = tp[-1]
             for mask in self._maskFunctions:
                 val = mask(val)
             yield val
@@ -108,15 +109,25 @@ class TimeSeries(Sequence):
         if startIndex < endIndex:
             if endIndex + 1 > len(self._listTimePoints):
                 return np.asarray([np.nan])
-            vals = self._listTimePoints[startIndex:endIndex + 1, 1:]
+            vals = self._listTimePoints[startIndex:endIndex + 1, -1:]
         else:
             if startIndex + 1 > len(self._listTimePoints)-1:
                 return np.asarray([np.nan])
-            vals = self._listTimePoints[endIndex:startIndex + 1, 1:]
+            vals = self._listTimePoints[endIndex:startIndex + 1, -1:]
         for mask in self._maskFunctions:
             getVals = lambda x : mask(x[0])
             vals = np.apply_along_axis(getVals, axis=1, arr=vals)
         return vals
+
+    def getDatetimeFeatures(self, timePoint=None):
+        if timePoint is None:
+            return self._listTimePoints[:, 1]
+        else:
+            rowNum = self._dateTimeHash.get(timePoint, None)
+            if rowNum is not None:
+                return self._listTimePoints[rowNum, 1]
+            else:
+                return np.asarray([np.nan])
 
     def __delitem__(self, ii):
         del self._listTimePoints[ii]
@@ -147,10 +158,13 @@ class TimeSeries(Sequence):
             raise DuplicateTimePointException("The dateTime already exists, cannot have duplicates")
         else:
             if self._listTimePoints is None:
-                self._listTimePoints = np.asarray([[timePoint.getDateTime(), timePoint.getValue()]])
+                self._listTimePoints = np.asarray(
+                    [[timePoint.getDateTime(), timePoint.getTimePointFeatures(), timePoint.getValue()]])
             else:
                 self._listTimePoints = np.vstack([self._listTimePoints,
-                                                  np.asarray([[timePoint.getDateTime(), timePoint.getValue()]])])
+                                                  np.asarray([[timePoint.getDateTime(),
+                                                               timePoint.getTimePointFeatures(),
+                                                               timePoint.getValue()]])])
             # To get sum, we must get the value as it is after any filter functions
             self.sum_values += timePoint.getValue()
             self._dateTimeHash[timePoint.getDateTime()] = len(self._listTimePoints) - 1
